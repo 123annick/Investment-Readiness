@@ -1,0 +1,66 @@
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  async rewrites() {
+    return [
+      {
+        source: "/api/auth/:path*",
+        destination: "http://localhost:8081/api/auth/:path*",
+      },
+      {
+        source: "/api/users/:path*",
+        destination: "http://localhost:8081/api/users/:path*",
+      },
+      {
+        source: "/api/config",
+        destination: "http://localhost:8081/api/config",
+      },
+      {
+        source: "/api/config/:path*",
+        destination: "http://localhost:8081/api/config/:path*",
+      },
+      {
+        source: "/api/startup/profile/:path*",
+        destination: "http://localhost:8081/api/startup/profile/:path*",
+      },
+      {
+        source: "/api/startup/:path*",
+        destination: "http://localhost:8082/api/startup/:path*",
+      },
+      {
+        source: "/api/investor/profile/:path*",
+        destination: "http://localhost:8081/api/investor/profile/:path*",
+      },
+      {
+        source: "/api/investor/:path*",
+        destination: "http://localhost:8082/api/investor/:path*",
+      },
+      {
+        source: "/api/executions/:path*",
+        destination: "http://localhost:8082/api/executions/:path*",
+      },
+      {
+        source: "/api/ai/:path*",
+        destination: "http://localhost:8083/api/ai/:path*",
+      },
+      {
+        source: "/api/evaluator/profile/:path*",
+        destination: "http://localhost:8081/api/evaluator/profile/:path*",
+      },
+      {
+        source: "/api/evaluator/:path*",
+        destination: "http://localhost:8084/api/evaluator/:path*",
+      },
+      {
+        source: "/api/matching/:path*",
+        destination: "http://localhost:8085/api/matching/:path*",
+      },
+      {
+        source: "/api/admin/:path*",
+        destination: "http://localhost:8087/api/admin/:path*",
+      },
+    ];
+  },
+};
+
+export default nextConfig;
