@@ -38,7 +38,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/executions/investor/internal/**").permitAll()
                         .requestMatchers("/api/executions/startup/internal/all").permitAll()
                         .requestMatchers("/api/executions/investor/internal/all").permitAll()
-                        .requestMatchers("/api/executions/startup/all").hasAuthority("ROLE_ADMIN")
+                        .requestMatchers("/api/executions/startup/all").hasAnyAuthority("ROLE_ADMIN", "ROLE_EVALUATOR")
                         .requestMatchers("/api/executions/investor/all").permitAll()
                         .requestMatchers("/api/executions/startup/**").hasAnyAuthority("ROLE_STARTUP", "ROLE_ADMIN")
                         .requestMatchers("/api/executions/investor/**").hasAnyAuthority("ROLE_INVESTOR", "ROLE_ADMIN")
@@ -51,7 +51,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:3000"));
+        config.setAllowedOriginPatterns(List.of("*"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);

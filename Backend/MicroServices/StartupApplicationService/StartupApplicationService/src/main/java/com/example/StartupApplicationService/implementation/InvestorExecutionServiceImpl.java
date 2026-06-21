@@ -10,6 +10,7 @@ import com.example.StartupApplicationService.repository.InvestorExecutionReposit
 import com.example.StartupApplicationService.service.InvestorExecutionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import java.util.concurrent.CompletableFuture;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -32,9 +33,9 @@ public class InvestorExecutionServiceImpl implements InvestorExecutionService {
         execution.setSuccessCriteria(request.getSuccessCriteria());
         execution.setStatus(ExecutionStatus.PENDING);
 
-        InvestorExecution saved = investorExecutionRepository.save(execution);
-        eventPublisher.publishInvestorExecutionSubmitted(saved.getId(), userId);
-        return toResponse(saved);
+InvestorExecution saved = investorExecutionRepository.save(execution);
+CompletableFuture.runAsync(() -> eventPublisher.publishInvestorExecutionSubmitted(saved.getId(), userId));
+return toResponse(saved);
     }
 
     @Override
@@ -44,7 +45,7 @@ public class InvestorExecutionServiceImpl implements InvestorExecutionService {
                 .map(this::toResponse)
                 .toList();
     }
-
+    
     @Override
     public List<InvestorExecutionResponse> getAllByUser(Long userId) {
         return investorExecutionRepository.findByUserId(userId)
@@ -122,6 +123,18 @@ public class InvestorExecutionServiceImpl implements InvestorExecutionService {
         investorExecutionRepository.delete(execution);
     }
 
+    @Override
+    public InvestorExecutionResponse markAsFunded(Long id, Long userId) {
+        InvestorExecution execution = investorExecutionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Execution not found with id: " + id));
+        if (!execution.getUserId().equals(userId)) {
+            throw new ResourceNotFoundException("Execution not found with id: " + id);
+        }
+        execution.setFunded(Boolean.TRUE);
+        execution.setFundedAt(LocalDateTime.now());
+        return toResponse(investorExecutionRepository.save(execution));
+    }
+
     private InvestorExecutionResponse toResponse(InvestorExecution e) {
         InvestorExecutionResponse response = new InvestorExecutionResponse();
         response.setId(e.getId());
@@ -136,6 +149,8 @@ public class InvestorExecutionServiceImpl implements InvestorExecutionService {
         response.setStatus(e.getStatus());
         response.setStatusReason(e.getStatusReason());
         response.setStatusUpdatedAt(e.getStatusUpdatedAt());
+        response.setFunded(Boolean.TRUE.equals(e.getFunded()));
+        response.setFundedAt(e.getFundedAt());
         response.setCreatedAt(e.getCreatedAt());
         response.setUpdatedAt(e.getUpdatedAt());
         return response;

@@ -13,6 +13,7 @@ import com.example.StartupApplicationService.service.StartupExecutionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import java.util.concurrent.CompletableFuture;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -43,9 +44,9 @@ public class StartupExecutionServiceImpl implements StartupExecutionService {
         execution.setLocation(request.getLocation());
         execution.setStatus(ExecutionStatus.PENDING);
 
-        StartupExecution saved = startupExecutionRepository.save(execution);
-        eventPublisher.publishStartupExecutionSubmitted(saved.getId(), userId);
-        return toResponse(saved);
+       StartupExecution saved = startupExecutionRepository.save(execution);
+CompletableFuture.runAsync(() -> eventPublisher.publishStartupExecutionSubmitted(saved.getId(), userId));
+return toResponse(saved);
     }
 
     @Override

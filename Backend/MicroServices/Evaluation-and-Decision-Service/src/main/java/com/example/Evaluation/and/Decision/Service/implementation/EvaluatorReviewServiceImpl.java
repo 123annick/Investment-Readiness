@@ -14,11 +14,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class EvaluatorReviewServiceImpl implements EvaluatorReviewService {
@@ -37,13 +39,14 @@ public class EvaluatorReviewServiceImpl implements EvaluatorReviewService {
         return toResponse(review);
     }
 
-    @Override
-    public List<EvaluatorReviewResponse> getMyReviews(Long evaluatorId) {
-        return reviewRepository.findByEvaluatorId(evaluatorId)
-                .stream()
-                .map(this::toResponse)
-                .toList();
-    }
+   @Override
+public List<EvaluatorReviewResponse> getMyReviews(Long evaluatorId) {
+    return reviewRepository
+        .findByEvaluatorIdOrEvaluatorIdIsNull(evaluatorId)
+        .stream()
+        .map(this::toResponse)
+        .toList();
+}
 
     @Override
     public List<EvaluatorReviewResponse> getAllReviews() {
@@ -52,41 +55,40 @@ public class EvaluatorReviewServiceImpl implements EvaluatorReviewService {
                 .map(this::toResponse)
                 .toList();
     }
+@Override
+public EvaluatorReviewResponse submitDecision(Long id, Long evaluatorId, DecisionRequest request) {
+    EvaluatorReview review = reviewRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Review not found with id: " + id));
 
-    @Override
-    public EvaluatorReviewResponse submitDecision(Long id, Long evaluatorId, DecisionRequest request) {
-        EvaluatorReview review = reviewRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Review not found with id: " + id));
-
-        if (!review.getEvaluatorId().equals(evaluatorId)) {
-            throw new UnauthorizedException("You are not assigned to this review");
-        }
-
-        if (review.getStatus() == DecisionStatus.DECIDED) {
-            throw new UnauthorizedException("This review has already been decided");
-        }
-
-        review.setDecision(request.getDecision());
-        review.setReason(request.getReason());
-        review.setStatus(DecisionStatus.DECIDED);
-        review.setDecidedAt(LocalDateTime.now());
-
-        EvaluatorReview saved = reviewRepository.save(review);
-
-        switch (request.getDecision()) {
-            case APPROVED -> eventPublisher.publishStartupApproved(
-                    saved.getExecutionId(), saved.getStartupUserId(), saved.getReason());
-            case REJECTED -> eventPublisher.publishStartupRejected(
-                    saved.getExecutionId(), saved.getStartupUserId(), saved.getReason());
-            case ESCALATED -> eventPublisher.publishStartupEscalated(
-                    saved.getExecutionId(), saved.getStartupUserId(), saved.getReason());
-        }
-
-        eventPublisher.publishEvaluationCompleted(
-                saved.getId(), saved.getExecutionId(), saved.getDecision().name());
-
-        return toResponse(saved);
+    if (review.getEvaluatorId() != null && !review.getEvaluatorId().equals(evaluatorId)) {
+        throw new UnauthorizedException("You are not assigned to this review");
     }
+
+    if (review.getStatus() == DecisionStatus.DECIDED) {
+        throw new UnauthorizedException("This review has already been decided");
+    }
+
+    review.setDecision(request.getDecision());
+    review.setReason(request.getReason());
+    review.setStatus(DecisionStatus.DECIDED);
+    review.setDecidedAt(LocalDateTime.now());
+
+    EvaluatorReview saved = reviewRepository.save(review);
+
+    switch (request.getDecision()) {
+        case APPROVED -> eventPublisher.publishStartupApproved(
+                saved.getExecutionId(), saved.getStartupUserId(), saved.getReason());
+        case REJECTED -> eventPublisher.publishStartupRejected(
+                saved.getExecutionId(), saved.getStartupUserId(), saved.getReason());
+        case ESCALATED -> eventPublisher.publishStartupEscalated(
+                saved.getExecutionId(), saved.getStartupUserId(), saved.getReason());
+    }
+
+    eventPublisher.publishEvaluationCompleted(
+            saved.getId(), saved.getExecutionId(), saved.getDecision().name());
+
+    return toResponse(saved);
+}
 
     @Override
     public List<EvaluatorReviewResponse> getEscalatedReviews() {
@@ -128,45 +130,48 @@ public class EvaluatorReviewServiceImpl implements EvaluatorReviewService {
         return toResponse(reviewRepository.save(review));
     }
 
-    @Override
-    public EvaluatorReviewResponse createReviewFromScore(
-            Long executionId,
-            Long startupUserId,
-            Double financialHealth,
-            Double teamStrength,
-            Double marketPotential,
-            Double businessViability,
-            Double overallScore,
-            String classification,
-            String aiReasoning,
-            String companySize,
-            String problemStatement,
-            String businessModel,
-            String targetMarket,
-            Double fundingNeeded) {
+   @Override
+public EvaluatorReviewResponse createReviewFromScore(
+        Long executionId,
+        Long startupUserId,
+        Double financialHealth,
+        Double teamStrength,
+        Double marketPotential,
+        Double businessViability,
+        Double overallScore,
+        String classification,
+        String aiReasoning,
+        String companySize,
+        String problemStatement,
+        String businessModel,
+        String targetMarket,
+        Double fundingNeeded) {
 
-        EvaluatorReview review = new EvaluatorReview();
-        review.setExecutionId(executionId);
-        review.setStartupUserId(startupUserId);
-        review.setFinancialHealth(financialHealth);
-        review.setTeamStrength(teamStrength);
-        review.setMarketPotential(marketPotential);
-        review.setBusinessViability(businessViability);
-        review.setOverallScore(overallScore);
-        review.setClassification(classification);
-        review.setAiReasoning(aiReasoning);
-        review.setCompanySize(companySize);
-        review.setProblemStatement(problemStatement);
-        review.setBusinessModel(businessModel);
-        review.setTargetMarket(targetMarket);
-        review.setFundingNeeded(fundingNeeded);
-        Long assignedEvaluatorId = fetchLeastLoadedEvaluatorId();
-        review.setEvaluatorId(assignedEvaluatorId);
-        review.setStatus(DecisionStatus.PENDING);
+    EvaluatorReview review = new EvaluatorReview();
+    review.setExecutionId(executionId);
+    review.setStartupUserId(startupUserId);
+    review.setFinancialHealth(financialHealth);
+    review.setTeamStrength(teamStrength);
+    review.setMarketPotential(marketPotential);
+    review.setBusinessViability(businessViability);
+    review.setOverallScore(overallScore);
+    review.setClassification(classification);
+    review.setAiReasoning(aiReasoning);
+    review.setCompanySize(companySize);
+    review.setProblemStatement(problemStatement);
+    review.setBusinessModel(businessModel);
+    review.setTargetMarket(targetMarket);
+    review.setFundingNeeded(fundingNeeded);
 
-        return toResponse(reviewRepository.save(review));
+    Long assignedEvaluatorId = fetchLeastLoadedEvaluatorId();
+    if (assignedEvaluatorId == null) {
+        log.warn("[Review] No evaluator could be assigned for executionId={}. Review saved as unassigned.", executionId);
     }
+    review.setEvaluatorId(assignedEvaluatorId); 
+    review.setStatus(DecisionStatus.PENDING);
 
+    return toResponse(reviewRepository.save(review));
+}
     @Override
     public long countPendingForEvaluator(Long evaluatorId) {
         return reviewRepository.countByEvaluatorIdAndStatus(evaluatorId, DecisionStatus.PENDING);

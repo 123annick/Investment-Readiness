@@ -25,6 +25,8 @@ public class InvestorExecutionResponse {
     private ExecutionStatus status;
     private String statusReason;
     private LocalDateTime statusUpdatedAt;
+    private Boolean funded;
+    private LocalDateTime fundedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

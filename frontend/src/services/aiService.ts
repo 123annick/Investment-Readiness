@@ -2,8 +2,8 @@ import axios from "axios";
 import { api } from "@/lib/api";
 
 const aiServiceApi = axios.create({
-  baseURL: "http://localhost:8083",
-  timeout: 60000,
+  baseURL: "https://ai-assessment-service.onrender.com",
+  timeout: 120000, // 2 min — scoring can be slow on cold start
   headers: { "Content-Type": "application/json" },
 });
 

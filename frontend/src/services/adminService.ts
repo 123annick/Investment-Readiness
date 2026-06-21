@@ -4,7 +4,7 @@ import { api } from "@/lib/api";
 
 
 const execServiceApi = axios.create({
-  baseURL: "http://localhost:8082",
+  baseURL: "https://startup-application-service.onrender.com",
   timeout: 30000,
   headers: { "Content-Type": "application/json" },
 });
@@ -18,7 +18,7 @@ execServiceApi.interceptors.request.use((config) => {
 });
 
 const auditServiceApi = axios.create({
-  baseURL: "http://localhost:8087",
+  baseURL: "https://audit-compliance-service.onrender.com",
   timeout: 30000,
   headers: { "Content-Type": "application/json" },
 });
@@ -32,7 +32,7 @@ auditServiceApi.interceptors.request.use((config) => {
 });
 
 const matchingServiceApi = axios.create({
-  baseURL: "http://localhost:8085",
+  baseURL: "https://investor-matching-service.onrender.com",
   timeout: 30000,
   headers: { "Content-Type": "application/json" },
 });
@@ -47,7 +47,7 @@ matchingServiceApi.interceptors.request.use((config) => {
 
 export const adminService = {
   getDashboardStats: async () => {
-    const evalServiceApi = axios.create({ baseURL: "http://localhost:8084", timeout: 30000 });
+    const evalServiceApi = axios.create({ baseURL: "https://evaluation-decision-service.onrender.com", timeout: 30000 });
     evalServiceApi.interceptors.request.use((config) => {
       const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
       if (token) config.headers.Authorization = `Bearer ${token}`;
@@ -170,7 +170,14 @@ export const adminService = {
   getAllStartupExecutions: () => execServiceApi.get("/api/executions/startup/all"),
 
   getAllInvestorExecutions: () => execServiceApi.get("/api/executions/investor/all"),
+getAllUsers: async (role?: string) => {
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const url = role
+    ? `https://user-management-service-2zr5.onrender.com/api/users?role=${role}`
+    : `https://user-management-service-2zr5.onrender.com/api/users`;
+  return axios.get(url, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+},
 
-  getAllUsers: (role?: string) =>
-    role ? api.get(`/api/users?role=${role}`) : api.get("/api/users"),
 };
